@@ -17,30 +17,48 @@
 *   **Target Count:** 최소 `500 ~ 1,000`대 (통계적 안정성 확보)
 
 ## 🔄 Phase Roadmap (Iterative Development)
-**에이전트는 사용자의 승인 전까지 현재 페이즈에만 집중합니다.**
 
-* **Phase A: Straight Only (Current)**
+* **✅ Phase A: Straight Only (Completed)**
     * 북-남 / 동-서 직진 신호 체계 구축.
-    * `logic.py` 핵심 엔진 구현: 1s 반응 지연 로직 포함.
-    * **Verification:** 현실적 범위(20-100s)에서의 대기 시간 Baseline 측정.
-* **Phase B: Left Turn Included**
-    * 좌회전 전용 차선 및 신호 페이즈 추가.
-    * **Verification:** 좌회전 추가 시 최적 Duration이 우측으로 이동하는지(U자 곡선) 확인.
-* **Phase C: Pedestrians & Crosswalks**
-    * 보행자 객체 및 보행 신호 추가. 차량-보행자 간 상호작용 반영.
+    * `logic.py` 핵심 엔진 구현 및 대기 시간 산출 버그 수정.
+* **✅ Phase B: Left Turn & RHT (Completed)**
+    * **Right-Hand Traffic (RHT):** 현실적인 우측통행 좌표계 및 차선(안쪽/바깥쪽) 시스템 도입.
+    * **4-Unit Signal:** [적-황-좌-녹] 4구 신호등 체계 및 건너편 배치 시각화.
+    * **Split Phase:** 충돌 방지를 위한 진입부별 개별 통행(Protected Approach) 신호 모드 추가.
+* **🏃 Phase C-1: Right Turn & Yielding (In Progress)**
+    * `Vehicle` 클래스: 우회전(`R`) 타입 및 궤적 로직 추가.
+    * **Red-Light Right Turn:** 빨간불에서도 일시 정지 후 우회전 허용(Stop-and-Go).
+    * **Collision Avoidance:** 우회전 차량 진입 시 타 방면 직진 차량과의 충돌 방지 로직 기초 설계.
+* **🏃 Phase C-2: Pedestrians & Crosswalks (Pending)**
+    * 보행자 객체 및 횡단보도 추가. 
+    * 차량 우회전 시 보행 신호에 따른 일시정지 및 보행자 보호 로직 반영.
 * **Phase D: Scramble (Diagonal)**
     * 모든 차량 정지 후 보행자만 전 방향 이동하는 페이즈 추가.
 
-## 🏃 Implementation Task (Current: Phase A)
-1.  **Engine Development (`logic.py`):**
-    * `Vehicle` 클래스: 좌표, 속도, 대기 시간 상태 관리.
-    * **1s Delay:** 정지선 맨 앞 차량은 신호 변경 후 1.0초(시뮬레이션 타임 기준) 뒤에 가속 시작.
-    * **Color Coding:** 대기 시간에 따라 Green -> Yellow -> Red 가시화.
-2.  **Data Logging (`terminal_runner.py`):**
-    * **Realistic Survey:** `spawn_rate`(0.02~0.08)별로 `duration`(20~100) 이중 루프 실행.
-    * **정확도 확보:** 동일 조건 시나리오를 **각 3~5회 반복 실행**하여 평균값 기록.
-3.  **Interface (`main.py`):**
-    * Tkinter Canvas 기반 교차로 렌더링 및 실시간 파라미터 제어.
+## 🏃 Current Implementation: Phase B Results
+Phase B 분석 결과, 2차선 교차로에서 **'공용 차로 + 진입부별 직좌 동시 신호'** 또는 **'전용 차로 + 직진 후 좌회전 신호'**가 가장 효율적임이 데이터로 입증되었습니다.
+
+1.  **Engine Logic (`logic.py`):**
+    * `Vehicle` 클래스: 좌회전 목적지(`turn_type`) 및 차선(`lane`) 기반 주행 로직.
+    * **Trajectory:** 좌회전 후 목적지 도로의 우측 차선으로 안착하는 궤적 보정 로직 적용.
+2.  **Visualization (`app.py`):**
+    * **Intuitive UI:** 신호등 박스 내 화살표(←) 점등 및 차량 몸체 방향 표시.
+    * **Real-time Config:** 실행 중 차선 구성 및 신호 모드 스위칭 지원.
+
+## 🎨 UI/UX Principles (app.py)
+시뮬레이션의 시각적 일관성과 직관성을 위해 다음 원칙을 준수합니다.
+
+*   **Color System:**
+    *   **Roads:** `#34495e` (Dark Gray), **Background:** `#2c3e50`.
+    *   **Lane Dividers:** 중앙선 `#f1c40f` (Yellow), 차선 구분선 `white` (Dashed).
+    *   **Vehicles:** 직진(S) `#3498db` (Blue), 좌회전(L) `#9b59b6` (Purple), 정지 상태 `#e74c3c` (Red).
+*   **Signal Visualization (4-Unit):**
+    *   구성: `[Red | Yellow | Left(←) | Green]` 순서의 가로형 박스.
+    *   배치: 운전자 시야를 고려하여 교차로 건너편(Far-side)에 배치.
+    *   상태: 활성 상태는 밝은 색, 비활성 상태는 어두운 색(Dimmed)으로 표현.
+*   **Information Overlay:**
+    *   차량 객체 내부에 목적지 화살표(←)를 표시하여 의도 시각화.
+    *   우측 컨트롤 패널을 통해 `Avg Wait`, `Passed Count`, `Current Phase` 실시간 모니터링.
 
 ## ⚠️ 3-Level Boundaries (경계 시스템)
 

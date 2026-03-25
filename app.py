@@ -13,8 +13,8 @@ class TrafficSimApp:
         self.duration_var = tk.DoubleVar(value=30.0)
         self.spawn_rate_var = tk.DoubleVar(value=0.04)
         self.scale_var = tk.DoubleVar(value=1.0)
-        self.lane_mode_var = tk.StringVar(value="SPLIT")
-        self.signal_mode_var = tk.StringVar(value="SIMULTANEOUS") # Default to Split Phase
+        self.lane_mode_var = tk.StringVar(value="SHARED")
+        self.signal_mode_var = tk.StringVar(value="SIMULTANEOUS") 
         self.target_var = tk.IntVar(value=500)
 
         self.setup_ui()
@@ -169,10 +169,25 @@ class TrafficSimApp:
 
         # Vehicles
         for v in self.engine.vehicles:
-            color = "#3498db" if v.turn_type == 'S' else "#9b59b6"
-            if v.stopped: color = "#e74c3c"
+            # Base color by turn type
+            if v.turn_type == 'S': base_color = "#3498db"
+            elif v.turn_type == 'L': base_color = "#9b59b6"
+            else: base_color = "#e67e22" # Right Turn (R)
+
+            # Color change based on wait time
+            if v.wait_time > 25: color = "#c0392b" # Dark Red (Urgent)
+            elif v.wait_time > 10: color = "#f39c12" # Orange/Yellow (Alert)
+            else: color = base_color
+
             self.canvas.create_rectangle(v.x-10, v.y-10, v.x+10, v.y+10, fill=color, outline="white", tags="vehicle")
-            if v.turn_type == 'L': self.canvas.create_text(v.x, v.y, text="←", fill="white", font=("Arial", 9, "bold"), tags="vehicle")
+            
+            # Direction indicators: L, R (Straight has no indicator)
+            indicator = ""
+            if v.turn_type == 'L': indicator = "L"
+            elif v.turn_type == 'R': indicator = "R"
+            
+            if indicator:
+                self.canvas.create_text(v.x, v.y, text=indicator, fill="white", font=("Arial", 9, "bold"), tags="vehicle")
 
         avg_wait = self.engine.total_wait_time / max(1, self.engine.passed_count)
         self.passed_label.config(text=f"Passed: {self.engine.passed_count}")
